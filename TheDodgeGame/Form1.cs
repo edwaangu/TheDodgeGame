@@ -23,10 +23,14 @@ namespace TheDodgeGame
         int nextLeft = 0;
         int nextRight = 0;
 
+        int runTimes = 120;
+
         bool leftKeyDown = false;
         bool rightKeyDown = false;
         bool upKeyDown = false;
         bool downKeyDown = false;
+
+        string scene = "menu";
 
         SolidBrush playerBrush = new SolidBrush(Color.Blue);
         SolidBrush obstacleBrush = new SolidBrush(Color.White);
@@ -34,6 +38,59 @@ namespace TheDodgeGame
         public Form1()
         {
             InitializeComponent();
+        }
+
+        public void theColumns()
+        {
+            nextLeft++;
+            if (nextLeft > 17)
+            {
+                nextLeft = 0;
+                leftColumns.Add(new Rectangle(150, -50, 10, 50));
+            }
+
+            nextRight++;
+            if (nextRight > 23)
+            {
+                nextRight = 0;
+                rightColumns.Add(new Rectangle(400, this.Height, 10, 50));
+            }
+
+
+
+            for (int i = 0; i < leftColumns.Count(); i++)
+            {
+                int newY = leftColumns[i].Y + leftColumnSpeed;
+                leftColumns[i] = new Rectangle(leftColumns[i].X, newY, leftColumns[i].Width, leftColumns[i].Height);
+
+                if (leftColumns[i].IntersectsWith(hero))
+                {
+                    gameTimer.Enabled = false;
+                    scene = "lose";
+                }
+
+                if (newY > this.Height)
+                {
+                    leftColumns.RemoveAt(i);
+                }
+            }
+            for (int i = 0; i < rightColumns.Count(); i++)
+            {
+                int newY = rightColumns[i].Y + rightColumnSpeed;
+                rightColumns[i] = new Rectangle(rightColumns[i].X, newY, rightColumns[i].Width, rightColumns[i].Height);
+
+
+                if (rightColumns[i].IntersectsWith(hero))
+                {
+                    gameTimer.Enabled = false;
+                    scene = "lose";
+                }
+
+                if (newY < 0 - rightColumns[i].Height)
+                {
+                    rightColumns.RemoveAt(i);
+                }
+            }
         }
 
         private void gameTimer_Tick(object sender, EventArgs e)
@@ -59,71 +116,51 @@ namespace TheDodgeGame
             if(hero.X + hero.Width > this.Width)
             {
                 gameTimer.Enabled = false;
+                scene = "win";
             }
             hero.Y = hero.Y < 0 ? 0 : (hero.Y + hero.Height > this.Height ? this.Height - hero.Height : hero.Y);
 
-            nextLeft++;
-            if(nextLeft > 17)
+
+            while (runTimes > 0)
             {
-                nextLeft = 0;
-                leftColumns.Add(new Rectangle(150, -50, 10, 50));
+                theColumns();
+                runTimes--;
             }
-
-            nextRight++;
-            if (nextRight > 23)
-            {
-                nextRight = 0;
-                rightColumns.Add(new Rectangle(400, this.Height, 10, 50));
-            }
-
-
-
-            for (int i = 0;i < leftColumns.Count();i++)
-            {
-                int newY = leftColumns[i].Y + leftColumnSpeed;
-                leftColumns[i] = new Rectangle(leftColumns[i].X, newY, leftColumns[i].Width, leftColumns[i].Height);
-
-                if (leftColumns[i].IntersectsWith(hero))
-                {
-                    gameTimer.Enabled = false;
-                }
-
-                if(newY > this.Height)
-                {
-                    leftColumns.RemoveAt(i);
-                }
-            }
-            for (int i = 0; i < rightColumns.Count(); i++)
-            {
-                int newY = rightColumns[i].Y + rightColumnSpeed;
-                rightColumns[i] = new Rectangle(rightColumns[i].X, newY, rightColumns[i].Width, rightColumns[i].Height);
-
-
-                if (rightColumns[i].IntersectsWith(hero))
-                {
-                    gameTimer.Enabled = false;
-                }
-
-                if (newY < 0 - rightColumns[i].Height)
-                {
-                    rightColumns.RemoveAt(i);
-                }
-            }
+            theColumns();
 
             Refresh();
         }
 
         private void Form1_Paint(object sender, PaintEventArgs e)
         {
-            e.Graphics.FillRectangle(playerBrush, hero);
 
-            for (int i = 0; i < leftColumns.Count(); i++)
+            if (scene == "game")
             {
-                e.Graphics.FillRectangle(obstacleBrush, leftColumns[i]);
+                e.Graphics.FillRectangle(playerBrush, hero);
+
+                for (int i = 0; i < leftColumns.Count(); i++)
+                {
+                    e.Graphics.FillRectangle(obstacleBrush, leftColumns[i]);
+                }
+                for (int i = 0; i < rightColumns.Count(); i++)
+                {
+                    e.Graphics.FillRectangle(obstacleBrush, rightColumns[i]);
+                }
             }
-            for (int i = 0; i < rightColumns.Count(); i++)
+            else if(scene == "menu")
             {
-                e.Graphics.FillRectangle(obstacleBrush, rightColumns[i]);
+                titleLabel.Text = "DODGING GAME";
+                extraLabel.Text = "Space to Start, Escape to Exit";
+            }
+            else if (scene == "lose")
+            {
+                titleLabel.Text = "YOU GOT HIT";
+                extraLabel.Text = "Space to Try Again, Escape to Exit";
+            }
+            else if (scene == "win")
+            {
+                titleLabel.Text = "YOU WIN";
+                extraLabel.Text = "Space to Play Again, Escape to Exit";
             }
         }
 
@@ -161,6 +198,34 @@ namespace TheDodgeGame
                     break;
                 case Keys.Down:
                     downKeyDown = true;
+                    break;
+                case Keys.Space:
+                    if (scene != "game")
+                    {
+                        hero.X = 50;
+                        hero.Y = 50;
+
+                        runTimes = 120;
+
+                        leftColumns.Clear();
+                        rightColumns.Clear();
+
+                        nextLeft = 0;
+                        nextRight = 0;
+
+                        titleLabel.Text = "";
+                        extraLabel.Text = "";
+
+
+                        gameTimer.Enabled = true;
+                        scene = "game";
+                    }
+                    break;
+                case Keys.Escape:
+                    if(scene != "game")
+                    {
+                        Application.Exit();
+                    }
                     break;
             }
         }
